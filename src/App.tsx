@@ -7,6 +7,9 @@ import { DashboardLayout } from "./components/layout/dashboard-layout";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import Production from "./pages/Production";
+import Equipment from "./pages/Equipment";
+import Inventory from "./pages/Inventory";
+import Financial from "./pages/Financial";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,10 +32,21 @@ const App = () => (
               <Production />
             </DashboardLayout>
           } />
-          {/* Redirect /dashboard/* to dashboard modules when they're ready */}
-          <Route path="/dashboard/equipment" element={<Navigate to="/dashboard" replace />} />
-          <Route path="/dashboard/inventory" element={<Navigate to="/dashboard" replace />} />
-          <Route path="/dashboard/financial" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/dashboard/equipment" element={
+            <DashboardLayout>
+              <Equipment />
+            </DashboardLayout>
+          } />
+          <Route path="/dashboard/inventory" element={
+            <DashboardLayout>
+              <Inventory />
+            </DashboardLayout>
+          } />
+          <Route path="/dashboard/financial" element={
+            <DashboardLayout>
+              <Financial />
+            </DashboardLayout>
+          } />
           <Route path="/dashboard/users" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard/safety" element={<Navigate to="/dashboard" replace />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

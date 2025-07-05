@@ -9,7 +9,260 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      equipment: {
+        Row: {
+          created_at: string
+          id: string
+          last_maintenance: string | null
+          location: string | null
+          model: string | null
+          name: string
+          next_maintenance: string | null
+          purchase_date: string | null
+          serial_number: string | null
+          status: string
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_maintenance?: string | null
+          location?: string | null
+          model?: string | null
+          name: string
+          next_maintenance?: string | null
+          purchase_date?: string | null
+          serial_number?: string | null
+          status?: string
+          type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_maintenance?: string | null
+          location?: string | null
+          model?: string | null
+          name?: string
+          next_maintenance?: string | null
+          purchase_date?: string | null
+          serial_number?: string | null
+          status?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      financial_transactions: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          description: string
+          id: string
+          reference_id: string | null
+          reference_type: string | null
+          transaction_date: string
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          category: string
+          created_at?: string
+          description: string
+          id?: string
+          reference_id?: string | null
+          reference_type?: string | null
+          transaction_date?: string
+          type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          description?: string
+          id?: string
+          reference_id?: string | null
+          reference_type?: string | null
+          transaction_date?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      inventory_items: {
+        Row: {
+          category: string
+          created_at: string
+          current_stock: number
+          id: string
+          location: string | null
+          maximum_stock: number | null
+          minimum_stock: number
+          name: string
+          sku: string | null
+          unit_cost: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          current_stock?: number
+          id?: string
+          location?: string | null
+          maximum_stock?: number | null
+          minimum_stock?: number
+          name: string
+          sku?: string | null
+          unit_cost?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          current_stock?: number
+          id?: string
+          location?: string | null
+          maximum_stock?: number | null
+          minimum_stock?: number
+          name?: string
+          sku?: string | null
+          unit_cost?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      maintenance_records: {
+        Row: {
+          completed_date: string | null
+          cost: number | null
+          created_at: string
+          description: string
+          equipment_id: string
+          id: string
+          scheduled_date: string
+          status: string
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_date?: string | null
+          cost?: number | null
+          created_at?: string
+          description: string
+          equipment_id: string
+          id?: string
+          scheduled_date: string
+          status?: string
+          type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_date?: string | null
+          cost?: number | null
+          created_at?: string
+          description?: string
+          equipment_id?: string
+          id?: string
+          scheduled_date?: string
+          status?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_records_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      production_records: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          location: string
+          material_type: string
+          notes: string | null
+          quality: string
+          quantity: number
+          shift: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date?: string
+          id?: string
+          location: string
+          material_type: string
+          notes?: string | null
+          quality: string
+          quantity: number
+          shift: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          location?: string
+          material_type?: string
+          notes?: string | null
+          quality?: string
+          quantity?: number
+          shift?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          full_name: string | null
+          id: string
+          role: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          role?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          role?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

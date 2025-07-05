@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,43 +7,99 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, FileText, Download } from "lucide-react";
+import { Plus, FileText, Download, Edit, Trash2 } from "lucide-react";
+import { createProductionRecord, updateProductionRecord, deleteProductionRecord, getProductionRecords } from "@/lib/actions/production";
+import { useToast } from "@/components/ui/use-toast";
 
-const productionRecords = [
-  {
-    id: "PR-001",
-    date: "2024-01-15",
-    shift: "Day",
-    materialType: "Gold Ore",
-    quantity: 1850,
-    quality: "Grade A",
-    location: "Zone A-1",
-    operator: "Mike Johnson"
-  },
-  {
-    id: "PR-002", 
-    date: "2024-01-15",
-    shift: "Night",
-    materialType: "Copper Ore",
-    quantity: 2100,
-    quality: "Grade B+",
-    location: "Zone B-2",
-    operator: "Sarah Williams"
-  },
-  {
-    id: "PR-003",
-    date: "2024-01-14",
-    shift: "Day", 
-    materialType: "Coal",
-    quantity: 3200,
-    quality: "Standard",
-    location: "Zone C-1",
-    operator: "David Chen"
-  },
-];
+type ProductionRecord = {
+  id: string;
+  date: string;
+  shift: string;
+  material_type: string;
+  quantity: number;
+  quality: string;
+  location: string;
+  notes?: string;
+};
 
 const Production = () => {
   const [showForm, setShowForm] = useState(false);
+  const [editingRecord, setEditingRecord] = useState<ProductionRecord | null>(null);
+  const [records, setRecords] = useState<ProductionRecord[]>([]);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    loadRecords();
+  }, []);
+
+  const loadRecords = async () => {
+    try {
+      const data = await getProductionRecords();
+      setRecords(data);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to load production records",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSubmit = async (formData: FormData) => {
+    try {
+      if (editingRecord) {
+        await updateProductionRecord(editingRecord.id, formData);
+        toast({
+          title: "Success",
+          description: "Production record updated successfully",
+        });
+      } else {
+        await createProductionRecord(formData);
+        toast({
+          title: "Success",
+          description: "Production record created successfully",
+        });
+      }
+      setShowForm(false);
+      setEditingRecord(null);
+      loadRecords();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save production record",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEdit = (record: ProductionRecord) => {
+    setEditingRecord(record);
+    setShowForm(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (confirm("Are you sure you want to delete this record?")) {
+      try {
+        await deleteProductionRecord(id);
+        toast({
+          title: "Success",
+          description: "Production record deleted successfully",
+        });
+        loadRecords();
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to delete production record",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  const handleNewRecord = () => {
+    setEditingRecord(null);
+    setShowForm(true);
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -58,7 +114,7 @@ const Production = () => {
             <Download className="mr-2 h-4 w-4" />
             Export
           </Button>
-          <Button onClick={() => setShowForm(!showForm)}>
+          <Button onClick={handleNewRecord}>
             <Plus className="mr-2 h-4 w-4" />
             Add Record
           </Button>
@@ -69,92 +125,104 @@ const Production = () => {
       {showForm && (
         <Card className="bg-gradient-surface shadow-elevation">
           <CardHeader>
-            <CardTitle>New Production Record</CardTitle>
+            <CardTitle>{editingRecord ? "Edit Production Record" : "New Production Record"}</CardTitle>
             <CardDescription>Enter production details for the current shift</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="date">Date</Label>
-                <Input id="date" type="date" defaultValue={new Date().toISOString().split('T')[0]} />
+          <CardContent>
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              const formData = new FormData(e.currentTarget);
+              await handleSubmit(formData);
+            }} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="date">Date</Label>
+                  <Input 
+                    id="date" 
+                    name="date" 
+                    type="date" 
+                    defaultValue={editingRecord?.date || new Date().toISOString().split('T')[0]} 
+                    required 
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="shift">Shift</Label>
+                  <Select name="shift" defaultValue={editingRecord?.shift || ""} required>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select shift" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="day">Day Shift</SelectItem>
+                      <SelectItem value="night">Night Shift</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="location">Location</Label>
+                  <Input 
+                    id="location" 
+                    name="location" 
+                    placeholder="Enter location" 
+                    defaultValue={editingRecord?.location || ""} 
+                    required 
+                  />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="shift">Shift</Label>
-                <Select>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select shift" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="day">Day Shift</SelectItem>
-                    <SelectItem value="night">Night Shift</SelectItem>
-                  </SelectContent>
-                </Select>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="materialType">Material Type</Label>
+                  <Input 
+                    id="materialType" 
+                    name="materialType" 
+                    placeholder="Enter material type" 
+                    defaultValue={editingRecord?.material_type || ""} 
+                    required 
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="quantity">Quantity (tons)</Label>
+                  <Input 
+                    id="quantity" 
+                    name="quantity" 
+                    type="number" 
+                    step="0.01" 
+                    placeholder="Enter quantity" 
+                    defaultValue={editingRecord?.quantity || ""} 
+                    required 
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="quality">Quality Grade</Label>
+                  <Input 
+                    id="quality" 
+                    name="quality" 
+                    placeholder="Enter quality grade" 
+                    defaultValue={editingRecord?.quality || ""} 
+                    required 
+                  />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="location">Location</Label>
-                <Select>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select location" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="zone-a1">Zone A-1</SelectItem>
-                    <SelectItem value="zone-a2">Zone A-2</SelectItem>
-                    <SelectItem value="zone-b1">Zone B-1</SelectItem>
-                    <SelectItem value="zone-b2">Zone B-2</SelectItem>
-                    <SelectItem value="zone-c1">Zone C-1</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="material">Material Type</Label>
-                <Select>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select material" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="gold-ore">Gold Ore</SelectItem>
-                    <SelectItem value="copper-ore">Copper Ore</SelectItem>
-                    <SelectItem value="coal">Coal</SelectItem>
-                    <SelectItem value="iron-ore">Iron Ore</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="quantity">Quantity (tons)</Label>
-                <Input id="quantity" type="number" placeholder="Enter quantity" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="quality">Quality Grade</Label>
-                <Select>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select grade" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="grade-a">Grade A</SelectItem>
-                    <SelectItem value="grade-b+">Grade B+</SelectItem>
-                    <SelectItem value="grade-b">Grade B</SelectItem>
-                    <SelectItem value="standard">Standard</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="notes">Notes (optional)</Label>
-              <Textarea id="notes" placeholder="Additional notes about this production record..." />
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="notes">Notes (optional)</Label>
+                <Textarea 
+                  id="notes" 
+                  name="notes" 
+                  placeholder="Additional notes about this production record..." 
+                  defaultValue={editingRecord?.notes || ""} 
+                />
+              </div>
 
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setShowForm(false)}>
-                Cancel
-              </Button>
-              <Button onClick={() => setShowForm(false)}>
-                Save Record
-              </Button>
-            </div>
+              <div className="flex justify-end gap-2">
+                <Button type="button" variant="outline" onClick={() => { setShowForm(false); setEditingRecord(null); }}>
+                  Cancel
+                </Button>
+                <Button type="submit">
+                  {editingRecord ? "Update Record" : "Save Record"}
+                </Button>
+              </div>
+            </form>
           </CardContent>
         </Card>
       )}
@@ -179,31 +247,45 @@ const Production = () => {
                 <TableHead>Quantity</TableHead>
                 <TableHead>Quality</TableHead>
                 <TableHead>Location</TableHead>
-                <TableHead>Operator</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {productionRecords.map((record) => (
+              {records.map((record) => (
                 <TableRow key={record.id}>
-                  <TableCell className="font-medium">{record.id}</TableCell>
+                  <TableCell className="font-medium">{record.id.substring(0, 8)}</TableCell>
                   <TableCell>{new Date(record.date).toLocaleDateString()}</TableCell>
                   <TableCell>
-                    <Badge variant={record.shift === "Day" ? "default" : "secondary"}>
+                    <Badge variant={record.shift === "day" ? "default" : "secondary"}>
                       {record.shift}
                     </Badge>
                   </TableCell>
-                  <TableCell>{record.materialType}</TableCell>
+                  <TableCell>{record.material_type}</TableCell>
                   <TableCell>{record.quantity.toLocaleString()} tons</TableCell>
                   <TableCell>
-                    <Badge 
-                      variant={record.quality === "Grade A" ? "default" : "secondary"}
-                      className={record.quality === "Grade A" ? "bg-success text-success-foreground" : ""}
-                    >
+                    <Badge variant="secondary">
                       {record.quality}
                     </Badge>
                   </TableCell>
                   <TableCell>{record.location}</TableCell>
-                  <TableCell>{record.operator}</TableCell>
+                  <TableCell>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEdit(record)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDelete(record.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
